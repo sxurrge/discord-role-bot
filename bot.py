@@ -1,3 +1,5 @@
+
+
 import discord
 from discord.ext import commands
 
@@ -116,7 +118,49 @@ async def arise(ctx):
 
     await ctx.send(embed=embed, view=view)
 
+import asyncio
+
+async def load_extensions():
+    await bot.load_extension("voice_cmd")
+
+    print("voice_cmd を読み込みました")  # ←確認用
+
+asyncio.run(load_extensions())
+
+from discord.ext import commands
+
+@bot.event
+async def on_command_error(ctx, error):
+    # ログに詳細
+    print(f"[command_error] {type(error).__name__}: {error}")
+
+    # よくあるものをユーザー向けに分かりやすく
+    if isinstance(error, commands.CommandNotFound):
+        return  # 未定義コマンドは無視（好みでメッセージ出してもOK）
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send("権限が足りないため実行できません。")
+        return
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("引数が足りません。コマンドの使い方を確認してください。")
+        return
+
+    await ctx.send("コマンド実行中にエラーが発生しました。")
+
 
 import os
-bot.run(os.getenv("DISCORD_TOKEN"))
+from pathlib import Path
+from dotenv import load_dotenv
 
+BASE_DIR = Path(__file__).resolve().parent
+ENV_PATH = BASE_DIR / ".env"
+load_dotenv(dotenv_path=ENV_PATH)
+
+token = os.getenv("DISCORD_TOKEN")
+print(f"[DEBUG] running file: {__file__}")
+print(f"[DEBUG] env path: {ENV_PATH}")
+print("[DEBUG] token:", "OK" if token else "NONE")
+
+if not token:
+    raise ValueError("DISCORD_TOKEN が見つかりません。.env の場所/中身を確認してください。")
+
+bot.run(token)
